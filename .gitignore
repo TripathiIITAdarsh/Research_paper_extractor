@@ -1,0 +1,12 @@
+# secrets — never commit
+.gemini_key
+.core_key
+.env
+
+# generated
+exports/
+__pycache__/
+*.pyc
+
+# scratch/experiment outputs
+out_*.md

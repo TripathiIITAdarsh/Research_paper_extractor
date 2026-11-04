@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Paper agent — multi-source search</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --bg: #f7f7f9;
+    --card: #ffffff;
+    --border: #e2e4e8;
+    --text: #1b1d22;
+    --muted: #666b74;
+    --accent: #2b5bd7;
+    --accent-soft: #e8efff;
+    --error: #c0392b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #15171c;
+      --card: #1d2027;
+      --border: #2a2e36;
+      --text: #e9ebef;
+      --muted: #9aa0ab;
+      --accent: #7aa2ff;
+      --accent-soft: #1f2a44;
+      --error: #ff7a6a;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, Segoe UI, Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 24px 16px;
+  }
+  header { max-width: 1200px; margin: 0 auto 20px; }
+  h1 { font-size: 20px; margin: 0 0 12px; }
+  .controls {
+    display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+  }
+  input[type=text] {
+    flex: 1; min-width: 260px;
+    padding: 10px 12px; font-size: 15px;
+    border: 1px solid var(--border); border-radius: 8px;
+    background: var(--card); color: var(--text);
+  }
+  input[type=number] {
+    width: 80px; padding: 10px; font-size: 14px;
+    border: 1px solid var(--border); border-radius: 8px;
+    background: var(--card); color: var(--text);
+  }
+  button {
+    padding: 10px 18px; font-size: 15px; font-weight: 600;
+    background: var(--accent); color: white; border: 0; border-radius: 8px;
+    cursor: pointer;
+  }
+  button:disabled { opacity: 0.5; cursor: wait; }
+  label.ctl {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; color: var(--muted);
+    padding: 4px 8px; border: 1px solid var(--border); border-radius: 8px;
+    background: var(--card);
+  }
+  label.ctl input[type=number] {
+    width: 70px; padding: 6px 4px; border: 0; background: transparent;
+    color: var(--text); font-size: 14px; text-align: right;
+  }
+  .hint { color: var(--muted); font-size: 13px; margin-top: 6px; }
+  main { max-width: 1200px; margin: 0 auto; }
+  .source {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; margin-bottom: 20px; overflow: hidden;
+  }
+  .source-head {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 14px; background: var(--accent-soft);
+    border-bottom: 1px solid var(--border);
+  }
+  .source-head h2 { margin: 0; font-size: 15px; }
+  .source-head .meta { font-size: 12px; color: var(--muted); }
+  .err { padding: 10px 14px; color: var(--error); font-size: 13px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 8px 10px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--border); }
+  th { font-weight: 600; color: var(--muted); background: var(--bg); position: sticky; top: 0; }
+  td.num { text-align: right; white-space: nowrap; color: var(--muted); }
+  td.title { max-width: 480px; }
+  td.title a { color: var(--text); text-decoration: none; font-weight: 500; }
+  td.title a:hover { color: var(--accent); text-decoration: underline; }
+  td.authors { color: var(--muted); max-width: 220px; }
+  td.doi { font-family: ui-monospace, Consolas, monospace; font-size: 12px; color: var(--muted); }
+  td.doi a { color: var(--accent); text-decoration: none; }
+  .empty { padding: 14px; color: var(--muted); font-size: 13px; }
+  .spinner { display: inline-block; width: 14px; height: 14px;
+    border: 2px solid var(--muted); border-top-color: transparent;
+    border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .merged .source-head { background: linear-gradient(90deg, var(--accent-soft), transparent); }
+  .merged h2 { display: flex; align-items: center; gap: 8px; }
+  .badge { display: inline-block; font-size: 10px; padding: 2px 6px;
+    border-radius: 10px; background: var(--accent); color: white; font-weight: 600;
+    letter-spacing: 0.3px; text-transform: uppercase; }
+  .rank-controls { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  select {
+    padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px;
+    background: var(--card); color: var(--text); font-size: 13px;
+  }
+  td.src-pills { white-space: nowrap; }
+  td.journal { max-width: 180px; color: var(--muted); font-size: 12px; font-style: italic; }
+  .pill { display: inline-block; font-size: 10px; padding: 2px 6px; margin-right: 3px;
+    border-radius: 8px; background: var(--accent-soft); color: var(--accent);
+    font-weight: 600; letter-spacing: 0.2px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Paper agent — search multiple sources at once</h1>
+  <div class="controls">
+    <input type="text" id="q" placeholder='e.g. "magnetic tunnel junction" DFT NEGF Heusler'
+           value='"magnetic tunnel junction" DFT NEGF Heusler' autofocus>
+    <label class="ctl" title="how many papers to request from each API (capped by what each source actually indexes for this query)">
+      fetch per source
+      <input type="number" id="limit" value="50" min="5" max="200" step="5">
+    </label>
+    <label class="ctl" title="how many papers to show in the merged top panel">
+      top merged
+      <input type="number" id="topN" value="100" min="10" max="300" step="10">
+    </label>
+    <button id="go">Search</button>
+    <button id="exportBtn" disabled style="background:#16a34a;">Export to Excel</button>
+  </div>
+  <div class="hint">Each table shows raw results from one source. Phrases in quotes are matched literally where supported.</div>
+</header>
+<main>
+  <section class="source merged" id="sec-merged" hidden>
+    <div class="source-head">
+      <h2><span class="badge">New</span> Top <span id="topNLabel">100</span> merged across all sources</h2>
+      <div class="rank-controls">
+        <label for="rankBy">Rank by:</label>
+        <select id="rankBy">
+          <option value="citations">Citations (most cited)</option>
+          <option value="year_desc">Year (newest first)</option>
+          <option value="year_asc">Year (oldest first)</option>
+          <option value="cpy">Citations / year (hot)</option>
+          <option value="rrf">Relevance (reciprocal rank fusion)</option>
+        </select>
+        <span class="meta" id="mergedMeta"></span>
+      </div>
+    </div>
+    <div id="mergedBody" class="empty">Run a search to populate the merged table.</div>
+  </section>
+  <div id="out"></div>
+</main>
+
+<script>
+const out = document.getElementById("out");
+const q   = document.getElementById("q");
+const lim = document.getElementById("limit");
+const btn = document.getElementById("go");
+const rankBy = document.getElementById("rankBy");
+const mergedSec = document.getElementById("sec-merged");
+let mergedBody = document.getElementById("mergedBody");
+const mergedMeta = document.getElementById("mergedMeta");
+const topNInput = document.getElementById("topN");          // header control
+const topNLabel = document.getElementById("topNLabel");     // span inside merged panel header
+const exportBtn = document.getElementById("exportBtn");
+
+let mergedPool = [];      // all deduped papers from last search
+let lastQuery = "";
+let lastPerSource = {};   // {label: {rows, error}} snapshot of last search
+let lastRawTotal = 0;     // sum of rows across all sources before dedup
+
+function getTopN() {
+  const n = parseInt(topNInput.value, 10);
+  return (isNaN(n) || n < 1) ? 100 : n;
+}
+
+const SOURCES = {{ sources|tojson }};
+const CURRENT_YEAR = new Date().getFullYear();
+
+function skeleton() {
+  out.innerHTML = SOURCES.map(([key, label]) => `
+    <section class="source" id="sec-${key}">
+      <div class="source-head">
+        <h2>${label}</h2>
+        <span class="meta"><span class="spinner"></span> fetching…</span>
+      </div>
+      <div class="empty">Waiting for results…</div>
+    </section>`).join("");
+  mergedSec.hidden = false;
+  mergedBody.className = "empty";
+  mergedBody.textContent = "Fetching all sources…";
+  mergedMeta.innerHTML = '<span class="spinner"></span> building merged pool…';
+}
+
+function doiLink(doi) {
+  if (!doi) return "";
+  return `<a href="https://doi.org/${doi}" target="_blank" rel="noopener">${doi}</a>`;
+}
+
+function render(src) {
+  const sec = document.getElementById(`sec-${src.key}`);
+  if (!sec) return;
+  const head = sec.querySelector(".source-head .meta");
+  const rows = src.rows || [];
+  if (src.error) {
+    head.textContent = "error";
+    sec.innerHTML = sec.querySelector(".source-head").outerHTML +
+      `<div class="err">⚠ ${src.error}</div>`;
+    return;
+  }
+  const fetched = src.fetched ?? rows.length;
+  const requested = src.requested;
+  const txt = requested && fetched < requested
+    ? `${fetched} returned (asked for ${requested})`
+    : `${fetched} returned`;
+  head.textContent = txt;
+  if (!rows.length) {
+    sec.querySelector(".empty").textContent = "No results.";
+    return;
+  }
+  let body = `<table><thead><tr>
+      <th>#</th><th>Year</th><th>Cites</th><th>Title</th><th>Journal</th><th>Authors</th><th>DOI / link</th>
+    </tr></thead><tbody>`;
+  rows.forEach((r, i) => {
+    const authors = (r.authors || []).slice(0, 3).join(", ") +
+                    ((r.authors || []).length > 3 ? " et al." : "");
+    const titleHtml = r.url
+      ? `<a href="${r.url}" target="_blank" rel="noopener">${escapeHtml(r.title || "(no title)")}</a>`
+      : escapeHtml(r.title || "(no title)");
+    body += `<tr>
+        <td class="num">${i + 1}</td>
+        <td class="num">${r.year ?? ""}</td>
+        <td class="num">${r.citations ?? ""}</td>
+        <td class="title">${titleHtml}</td>
+        <td class="journal">${escapeHtml(r.journal || "")}</td>
+        <td class="authors">${escapeHtml(authors)}</td>
+        <td class="doi">${doiLink(r.doi)}</td>
+      </tr>`;
+  });
+  body += `</tbody></table>`;
+  sec.querySelector(".empty")?.remove();
+  sec.insertAdjacentHTML("beforeend", body);
+}
+
+function escapeHtml(s) {
+  return (s || "").replace(/[&<>"']/g, c => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  }[c]));
+}
+
+function sortMerged(pool, mode) {
+  const copy = pool.slice();
+  const bigNeg = Number.NEGATIVE_INFINITY;
+  const bigPos = Number.POSITIVE_INFINITY;
+  if (mode === "citations") {
+    copy.sort((a, b) => (b.citations ?? -1) - (a.citations ?? -1) || (b.year ?? 0) - (a.year ?? 0));
+  } else if (mode === "year_desc") {
+    copy.sort((a, b) => (b.year ?? bigNeg) - (a.year ?? bigNeg) || (b.citations ?? 0) - (a.citations ?? 0));
+  } else if (mode === "year_asc") {
+    copy.sort((a, b) => (a.year ?? bigPos) - (b.year ?? bigPos) || (b.citations ?? 0) - (a.citations ?? 0));
+  } else if (mode === "cpy") {
+    const cpy = p => (p.citations ?? 0) / Math.max(1, CURRENT_YEAR - (p.year ?? CURRENT_YEAR) + 1);
+    copy.sort((a, b) => cpy(b) - cpy(a));
+  } else if (mode === "rrf") {
+    const K = 60;
+    const score = p => {
+      const r = p.rank_in_source || {};
+      let s = 0;
+      Object.values(r).forEach(rk => { s += 1 / (K + rk); });
+      return s;
+    };
+    copy.sort((a, b) => score(b) - score(a));
+  }
+  return copy;
+}
+
+function renderMerged() {
+  if (!mergedPool.length) {
+    mergedBody.className = "empty";
+    mergedBody.textContent = "No merged results.";
+    mergedMeta.textContent = "";
+    return;
+  }
+  const topN = getTopN();
+  topNLabel.textContent = topN;
+  const sorted = sortMerged(mergedPool, rankBy.value).slice(0, topN);
+  mergedMeta.textContent = `top ${sorted.length} of ${mergedPool.length} unique papers (deduped from ${lastRawTotal} raw rows across ${SOURCES.length} sources)`;
+  let body = `<table><thead><tr>
+    <th>#</th><th>Year</th><th>Cites</th><th>C/yr</th>
+    <th>Title</th><th>Journal</th><th>Authors</th><th>Found in</th><th>DOI</th>
+  </tr></thead><tbody>`;
+  sorted.forEach((r, i) => {
+    const authors = (r.authors || []).slice(0, 3).join(", ") +
+                    ((r.authors || []).length > 3 ? " et al." : "");
+    const titleHtml = r.url
+      ? `<a href="${r.url}" target="_blank" rel="noopener">${escapeHtml(r.title || "(no title)")}</a>`
+      : escapeHtml(r.title || "(no title)");
+    const cpy = r.citations && r.year
+      ? (r.citations / Math.max(1, CURRENT_YEAR - r.year + 1)).toFixed(1)
+      : "";
+    const pills = (r.sources || []).map(s =>
+      `<span class="pill">${escapeHtml(s)}</span>`).join("");
+    body += `<tr>
+      <td class="num">${i + 1}</td>
+      <td class="num">${r.year ?? ""}</td>
+      <td class="num">${r.citations ?? ""}</td>
+      <td class="num">${cpy}</td>
+      <td class="title">${titleHtml}</td>
+      <td class="journal">${escapeHtml(r.journal || "")}</td>
+      <td class="authors">${escapeHtml(authors)}</td>
+      <td class="src-pills">${pills}</td>
+      <td class="doi">${doiLink(r.doi)}</td>
+    </tr>`;
+  });
+  body += `</tbody></table>`;
+  mergedBody.className = "";
+  mergedBody.innerHTML = body;
+}
+
+async function go() {
+  const query = q.value.trim();
+  if (!query) return;
+  btn.disabled = true; btn.textContent = "Searching…";
+  skeleton();
+  try {
+    const r = await fetch(`/search?q=${encodeURIComponent(query)}&limit=${encodeURIComponent(lim.value)}`);
+    const data = await r.json();
+    (data.sources || []).forEach(render);
+    mergedPool = data.merged || [];
+    lastQuery = query;
+    lastPerSource = {};
+    lastRawTotal = 0;
+    (data.sources || []).forEach(s => {
+      lastPerSource[s.label] = { rows: s.rows || [], error: s.error || null };
+      lastRawTotal += (s.rows || []).length;
+    });
+    exportBtn.disabled = mergedPool.length === 0;
+    renderMerged();
+  } catch (e) {
+    out.innerHTML = `<div class="err">Request failed: ${e}</div>`;
+  } finally {
+    btn.disabled = false; btn.textContent = "Search";
+  }
+}
+
+async function exportToExcel() {
+  if (!mergedPool.length) return;
+  exportBtn.disabled = true;
+  const original = exportBtn.textContent;
+  exportBtn.textContent = "Exporting...";
+  const topN = getTopN();
+  const current = sortMerged(mergedPool, rankBy.value).slice(0, topN);
+  try {
+    const r = await fetch("/export", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        query: lastQuery,
+        merged: current,
+        per_source: lastPerSource,
+      }),
+    });
+    const ctype = r.headers.get("content-type") || "";
+    if (!r.ok || ctype.includes("application/json")) {
+      const d = await r.json();
+      throw new Error(d.error || `HTTP ${r.status}`);
+    }
+    // Server streamed an .xlsx — trigger a browser download
+    const blob = await r.blob();
+    const disp = r.headers.get("content-disposition") || "";
+    const nameMatch = disp.match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i);
+    const filename = nameMatch ? decodeURIComponent(nameMatch[1]) : "papers.xlsx";
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    exportBtn.textContent = "Downloaded ✓";
+    showToast(`Downloaded: ${filename}`);
+    setTimeout(() => { exportBtn.textContent = original; }, 2500);
+  } catch (e) {
+    alert("Export failed: " + e.message);
+    exportBtn.textContent = original;
+  } finally {
+    exportBtn.disabled = false;
+  }
+}
+
+function showToast(msg, detail) {
+  let t = document.getElementById("toast");
+  if (!t) {
+    t = document.createElement("div");
+    t.id = "toast";
+    t.style.cssText = "position:fixed;bottom:20px;right:20px;background:var(--card);border:1px solid var(--border);border-left:4px solid #16a34a;padding:12px 16px;border-radius:8px;font-size:13px;box-shadow:0 4px 20px rgba(0,0,0,0.15);max-width:420px;z-index:1000;";
+    document.body.appendChild(t);
+  }
+  t.innerHTML = `<div style="font-weight:600;margin-bottom:4px;">${escapeHtml(msg)}</div>` +
+                (detail ? `<div style="font-size:11px;color:var(--muted);font-family:ui-monospace,Consolas,monospace;word-break:break-all;">${escapeHtml(detail)}</div>` : "");
+  t.style.display = "block";
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => { t.style.display = "none"; }, 6000);
+}
+
+btn.addEventListener("click", go);
+q.addEventListener("keydown", e => { if (e.key === "Enter") go(); });
+rankBy.addEventListener("change", () => { if (mergedPool.length) renderMerged(); });
+topNInput.addEventListener("input", () => { if (mergedPool.length) renderMerged(); });
+exportBtn.addEventListener("click", exportToExcel);
+</script>
+</body>
+</html>
