@@ -6,144 +6,213 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
   :root {
-    --bg: #f7f7f9;
+    --bg: #f5f6fa;
     --card: #ffffff;
-    --border: #e2e4e8;
-    --text: #1b1d22;
-    --muted: #666b74;
+    --border: #e4e6eb;
+    --text: #15171c;
+    --muted: #5e6470;
     --accent: #2b5bd7;
+    --accent-2: #7c3aed;
     --accent-soft: #e8efff;
+    --accent-soft-2: #f0e9fd;
     --error: #c0392b;
+    --success: #2e7d4f;
+    --shadow: 0 1px 3px rgba(10, 14, 28, 0.04), 0 2px 8px rgba(10, 14, 28, 0.04);
+    --radius: 12px;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #15171c;
-      --card: #1d2027;
-      --border: #2a2e36;
-      --text: #e9ebef;
+      --bg: #0f1116;
+      --card: #1a1d24;
+      --border: #2a2e37;
+      --text: #ebedf1;
       --muted: #9aa0ab;
       --accent: #7aa2ff;
-      --accent-soft: #1f2a44;
+      --accent-2: #b088ff;
+      --accent-soft: #1d2a48;
+      --accent-soft-2: #2a1f44;
       --error: #ff7a6a;
+      --success: #6ed29a;
+      --shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 2px 10px rgba(0, 0, 0, 0.25);
     }
   }
   * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
   body {
     margin: 0;
-    font-family: -apple-system, Segoe UI, Roboto, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     background: var(--bg);
     color: var(--text);
-    padding: 24px 16px;
+    padding: 20px 16px 48px;
+    line-height: 1.4;
   }
-  header { max-width: 1200px; margin: 0 auto 20px; }
-  h1 { font-size: 20px; margin: 0 0 12px; }
+  header { max-width: 1200px; margin: 0 auto 16px; }
+  h1 { font-size: 20px; margin: 0 0 14px; font-weight: 700; letter-spacing: -0.01em; }
   .controls {
-    display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+    display: flex; gap: 8px; flex-wrap: wrap; align-items: stretch;
   }
-  input[type=text] {
-    flex: 1; min-width: 260px;
-    padding: 10px 12px; font-size: 15px;
-    border: 1px solid var(--border); border-radius: 8px;
+  .controls input[type=text] {
+    flex: 1 1 260px; min-width: 0;
+    padding: 12px 14px; font-size: 16px;
+    border: 1px solid var(--border); border-radius: 10px;
     background: var(--card); color: var(--text);
+    outline: none; transition: border-color .15s, box-shadow .15s;
   }
-  input[type=number] {
-    width: 80px; padding: 10px; font-size: 14px;
-    border: 1px solid var(--border); border-radius: 8px;
+  .controls input[type=text]:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  .controls input[type=number] {
+    width: 72px; padding: 12px 10px; font-size: 15px;
+    border: 1px solid var(--border); border-radius: 10px;
     background: var(--card); color: var(--text);
+    outline: none;
+  }
+  .field {
+    display: flex; flex-direction: column; gap: 3px;
+  }
+  .field label {
+    font-size: 11px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.04em;
+    padding-left: 2px; font-weight: 600;
   }
   button {
-    padding: 10px 18px; font-size: 15px; font-weight: 600;
-    background: var(--accent); color: white; border: 0; border-radius: 8px;
-    cursor: pointer;
+    padding: 12px 20px; font-size: 15px; font-weight: 600;
+    background: var(--accent); color: white; border: 0; border-radius: 10px;
+    cursor: pointer; transition: opacity .15s, transform .05s;
+    white-space: nowrap;
   }
+  button:hover:not(:disabled) { opacity: 0.92; }
+  button:active:not(:disabled) { transform: translateY(1px); }
   button:disabled { opacity: 0.5; cursor: wait; }
-  label.ctl {
-    display: inline-flex; align-items: center; gap: 6px;
-    font-size: 12px; color: var(--muted);
-    padding: 4px 8px; border: 1px solid var(--border); border-radius: 8px;
-    background: var(--card);
-  }
-  label.ctl input[type=number] {
-    width: 70px; padding: 6px 4px; border: 0; background: transparent;
-    color: var(--text); font-size: 14px; text-align: right;
-  }
-  .hint { color: var(--muted); font-size: 13px; margin-top: 6px; }
+  .btn-secondary { background: var(--accent-2); }
+  .hint { color: var(--muted); font-size: 13px; margin-top: 8px; }
   main { max-width: 1200px; margin: 0 auto; }
   .source {
     background: var(--card); border: 1px solid var(--border);
-    border-radius: 10px; margin-bottom: 20px; overflow: hidden;
+    border-radius: var(--radius); margin-bottom: 16px;
+    overflow: hidden; box-shadow: var(--shadow);
   }
   .source-head {
     display: flex; justify-content: space-between; align-items: center;
-    padding: 10px 14px; background: var(--accent-soft);
+    gap: 10px; flex-wrap: wrap;
+    padding: 12px 16px; background: var(--accent-soft);
     border-bottom: 1px solid var(--border);
   }
-  .source-head h2 { margin: 0; font-size: 15px; }
+  .source-head h2 { margin: 0; font-size: 15px; font-weight: 600; }
   .source-head .meta { font-size: 12px; color: var(--muted); }
-  .err { padding: 10px 14px; color: var(--error); font-size: 13px; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  th, td { padding: 8px 10px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--border); }
-  th { font-weight: 600; color: var(--muted); background: var(--bg); position: sticky; top: 0; }
-  td.num { text-align: right; white-space: nowrap; color: var(--muted); }
+  .err { padding: 12px 16px; color: var(--error); font-size: 13px; }
+
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 640px; }
+  th, td { padding: 10px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--border); }
+  tbody tr:last-child td { border-bottom: 0; }
+  tbody tr:hover { background: var(--accent-soft); }
+  th { font-weight: 600; color: var(--muted); background: var(--bg); font-size: 12px; text-transform: uppercase; letter-spacing: 0.03em; }
+  td.num { text-align: right; white-space: nowrap; color: var(--muted); font-variant-numeric: tabular-nums; }
   td.title { max-width: 480px; }
   td.title a { color: var(--text); text-decoration: none; font-weight: 500; }
   td.title a:hover { color: var(--accent); text-decoration: underline; }
-  td.authors { color: var(--muted); max-width: 220px; }
-  td.doi { font-family: ui-monospace, Consolas, monospace; font-size: 12px; color: var(--muted); }
+  td.authors { color: var(--muted); max-width: 220px; font-size: 12.5px; }
+  td.doi { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 11.5px; color: var(--muted); max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
   td.doi a { color: var(--accent); text-decoration: none; }
-  .empty { padding: 14px; color: var(--muted); font-size: 13px; }
-  .spinner { display: inline-block; width: 14px; height: 14px;
+  td.doi a:hover { text-decoration: underline; }
+  .empty { padding: 16px; color: var(--muted); font-size: 13px; text-align: center; }
+  .spinner { display: inline-block; width: 13px; height: 13px;
     border: 2px solid var(--muted); border-top-color: transparent;
-    border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle; }
+    border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: -2px; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  .merged .source-head { background: linear-gradient(90deg, var(--accent-soft), transparent); }
-  .merged h2 { display: flex; align-items: center; gap: 8px; }
-  .badge { display: inline-block; font-size: 10px; padding: 2px 6px;
-    border-radius: 10px; background: var(--accent); color: white; font-weight: 600;
-    letter-spacing: 0.3px; text-transform: uppercase; }
-  .rank-controls { display: flex; align-items: center; gap: 8px; font-size: 13px; }
-  select {
-    padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px;
-    background: var(--card); color: var(--text); font-size: 13px;
+  .merged .source-head {
+    background: linear-gradient(90deg, var(--accent-soft), var(--accent-soft-2));
   }
+  .merged h2 { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .badge { display: inline-block; font-size: 10px; padding: 3px 7px;
+    border-radius: 10px; background: var(--accent); color: white; font-weight: 700;
+    letter-spacing: 0.4px; text-transform: uppercase; }
+  .rank-controls { display: flex; align-items: center; gap: 8px; font-size: 13px; flex-wrap: wrap; }
+  .rank-controls label { color: var(--muted); }
+  select {
+    padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px;
+    background: var(--card); color: var(--text); font-size: 13px;
+    outline: none; cursor: pointer;
+    appearance: none; -webkit-appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+    background-position: calc(100% - 15px) 50%, calc(100% - 10px) 50%;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+    padding-right: 28px;
+  }
+  select:focus { border-color: var(--accent); }
   td.src-pills { white-space: nowrap; }
   td.journal { max-width: 180px; color: var(--muted); font-size: 12px; font-style: italic; }
-  .pill { display: inline-block; font-size: 10px; padding: 2px 6px; margin-right: 3px;
-    border-radius: 8px; background: var(--accent-soft); color: var(--accent);
-    font-weight: 600; letter-spacing: 0.2px; }
+  .pill { display: inline-block; font-size: 10px; padding: 2px 7px; margin: 1px 2px 1px 0;
+    border-radius: 10px; background: var(--accent-soft); color: var(--accent);
+    font-weight: 600; letter-spacing: 0.2px; white-space: nowrap; }
+  .btn-export { background: #16a34a; }
+
+  /* ---------- Mobile ---------- */
+  @media (max-width: 720px) {
+    body { padding: 14px 10px 32px; }
+    h1 { font-size: 18px; }
+    .controls { gap: 6px; }
+    .controls input[type=text] {
+      flex: 1 1 100%; padding: 11px 12px; font-size: 16px;
+    }
+    .controls input[type=number] {
+      flex: 1 1 calc(50% - 60px); width: auto;
+    }
+    .controls button {
+      flex: 1 1 100px; padding: 11px 14px;
+    }
+    .source-head { padding: 10px 12px; }
+    .source-head h2 { font-size: 14px; }
+    .source-head .meta { font-size: 11.5px; }
+    .rank-controls { width: 100%; font-size: 12.5px; }
+    .rank-controls select { flex: 1 1 140px; }
+    .rank-controls button { flex: 1 1 100%; }
+    table { font-size: 13px; min-width: 560px; }
+    th, td { padding: 8px 10px; }
+    td.title { max-width: 260px; }
+    td.title a { font-size: 13px; }
+    td.authors { display: none; }
+    td.doi { max-width: 140px; font-size: 11px; }
+    th.col-authors { display: none; }
+    .pill { font-size: 9.5px; padding: 2px 6px; }
+  }
+
+  @media (max-width: 420px) {
+    table { min-width: 480px; }
+    td.doi, th.col-doi { display: none; }
+    td.src-pills { max-width: 90px; white-space: normal; }
+    td.journal, th.col-journal { display: none; }
+  }
 </style>
 </head>
 <body>
 <header>
-  <h1>Paper agent — search multiple sources at once</h1>
+  <h1>Paper agent — search across sources</h1>
   <div class="controls">
-    <input type="text" id="q" placeholder='e.g. "magnetic tunnel junction" DFT NEGF Heusler'
-           value='"magnetic tunnel junction" DFT NEGF Heusler' autofocus>
-    <label class="ctl" title="how many papers to request from each API (capped by what each source actually indexes for this query)">
-      fetch per source
-      <input type="number" id="limit" value="50" min="5" max="200" step="5">
-    </label>
-    <label class="ctl" title="how many papers to show in the merged top panel">
-      top merged
-      <input type="number" id="topN" value="100" min="10" max="300" step="10">
-    </label>
+    <input type="text" id="q" placeholder='Which topic or review do you want to check for?'
+           value='' autocomplete="off" autofocus>
+    <input type="number" id="limit" value="25" min="5" max="200" title="Per source (how many papers to fetch from each API)" placeholder="per src">
+    <input type="number" id="topNInput" value="100" min="10" max="500" title="Merged top (how many papers in the combined table)" placeholder="top N">
     <button id="go">Search</button>
-    <button id="exportBtn" disabled style="background:#16a34a;">Export to Excel</button>
+    <button id="exportBtn" class="btn-export" disabled>Export to Excel</button>
   </div>
-  <div class="hint">Each table shows raw results from one source. Phrases in quotes are matched literally where supported.</div>
+  <div class="hint">Left number = per source · Right number = merged top. Hover for details. Phrases in quotes are matched literally where supported.</div>
 </header>
 <main>
-  <section class="source merged" id="sec-merged" hidden>
+  <section class="source merged" id="sec-merged">
     <div class="source-head">
-      <h2><span class="badge">New</span> Top <span id="topNLabel">100</span> merged across all sources</h2>
+      <h2><span class="badge">Merged</span> Top <span id="topN">100</span> across all sources</h2>
       <div class="rank-controls">
-        <label for="rankBy">Rank by:</label>
+        <label for="rankBy">Rank by</label>
         <select id="rankBy">
           <option value="citations">Citations (most cited)</option>
           <option value="year_desc">Year (newest first)</option>
           <option value="year_asc">Year (oldest first)</option>
           <option value="cpy">Citations / year (hot)</option>
-          <option value="rrf">Relevance (reciprocal rank fusion)</option>
+          <option value="rrf">Relevance (RRF)</option>
         </select>
         <span class="meta" id="mergedMeta"></span>
       </div>
@@ -157,24 +226,20 @@
 const out = document.getElementById("out");
 const q   = document.getElementById("q");
 const lim = document.getElementById("limit");
+const topNInput = document.getElementById("topNInput");
 const btn = document.getElementById("go");
+const exportBtn = document.getElementById("exportBtn");
 const rankBy = document.getElementById("rankBy");
 const mergedSec = document.getElementById("sec-merged");
 let mergedBody = document.getElementById("mergedBody");
 const mergedMeta = document.getElementById("mergedMeta");
-const topNInput = document.getElementById("topN");          // header control
-const topNLabel = document.getElementById("topNLabel");     // span inside merged panel header
-const exportBtn = document.getElementById("exportBtn");
+const topNSpan = document.getElementById("topN");
 
-let mergedPool = [];      // all deduped papers from last search
+let mergedPool = [];
+let topN = 100;
 let lastQuery = "";
-let lastPerSource = {};   // {label: {rows, error}} snapshot of last search
+let lastPerSource = {};   // {label: {rows, error}} snapshot for export
 let lastRawTotal = 0;     // sum of rows across all sources before dedup
-
-function getTopN() {
-  const n = parseInt(topNInput.value, 10);
-  return (isNaN(n) || n < 1) ? 100 : n;
-}
 
 const SOURCES = {{ sources|tojson }};
 const CURRENT_YEAR = new Date().getFullYear();
@@ -211,17 +276,16 @@ function render(src) {
     return;
   }
   const fetched = src.fetched ?? rows.length;
-  const requested = src.requested;
-  const txt = requested && fetched < requested
-    ? `${fetched} returned (asked for ${requested})`
-    : `${fetched} returned`;
-  head.textContent = txt;
   if (!rows.length) {
-    sec.querySelector(".empty").textContent = "No results.";
+    // nothing came back and no error — hide this card entirely so the layout is quieter
+    sec.remove();
     return;
   }
-  let body = `<table><thead><tr>
-      <th>#</th><th>Year</th><th>Cites</th><th>Title</th><th>Journal</th><th>Authors</th><th>DOI / link</th>
+  head.textContent = `showing ${rows.length} of ${fetched}`;
+  let body = `<div class="table-wrap"><table><thead><tr>
+      <th>#</th><th>Year</th><th>Cites</th><th>Title</th>
+      <th class="col-journal">Journal</th>
+      <th class="col-authors">Authors</th><th class="col-doi">DOI / link</th>
     </tr></thead><tbody>`;
   rows.forEach((r, i) => {
     const authors = (r.authors || []).slice(0, 3).join(", ") +
@@ -239,7 +303,7 @@ function render(src) {
         <td class="doi">${doiLink(r.doi)}</td>
       </tr>`;
   });
-  body += `</tbody></table>`;
+  body += `</tbody></table></div>`;
   sec.querySelector(".empty")?.remove();
   sec.insertAdjacentHTML("beforeend", body);
 }
@@ -283,13 +347,15 @@ function renderMerged() {
     mergedMeta.textContent = "";
     return;
   }
-  const topN = getTopN();
-  topNLabel.textContent = topN;
   const sorted = sortMerged(mergedPool, rankBy.value).slice(0, topN);
   mergedMeta.textContent = `top ${sorted.length} of ${mergedPool.length} unique papers (deduped from ${lastRawTotal} raw rows across ${SOURCES.length} sources)`;
-  let body = `<table><thead><tr>
+  let body = `<div class="table-wrap"><table><thead><tr>
     <th>#</th><th>Year</th><th>Cites</th><th>C/yr</th>
-    <th>Title</th><th>Journal</th><th>Authors</th><th>Found in</th><th>DOI</th>
+    <th>Title</th>
+    <th class="col-journal">Journal</th>
+    <th class="col-authors">Authors</th>
+    <th>Found in</th>
+    <th class="col-doi">DOI</th>
   </tr></thead><tbody>`;
   sorted.forEach((r, i) => {
     const authors = (r.authors || []).slice(0, 3).join(", ") +
@@ -314,7 +380,7 @@ function renderMerged() {
       <td class="doi">${doiLink(r.doi)}</td>
     </tr>`;
   });
-  body += `</tbody></table>`;
+  body += `</tbody></table></div>`;
   mergedBody.className = "";
   mergedBody.innerHTML = body;
 }
@@ -329,6 +395,8 @@ async function go() {
     const data = await r.json();
     (data.sources || []).forEach(render);
     mergedPool = data.merged || [];
+    topN = parseInt(topNInput.value, 10) || data.top_n || 100;
+    topNSpan.textContent = topN;
     lastQuery = query;
     lastPerSource = {};
     lastRawTotal = 0;
@@ -350,7 +418,6 @@ async function exportToExcel() {
   exportBtn.disabled = true;
   const original = exportBtn.textContent;
   exportBtn.textContent = "Exporting...";
-  const topN = getTopN();
   const current = sortMerged(mergedPool, rankBy.value).slice(0, topN);
   try {
     const r = await fetch("/export", {
@@ -388,25 +455,30 @@ async function exportToExcel() {
   }
 }
 
-function showToast(msg, detail) {
+function showToast(msg) {
   let t = document.getElementById("toast");
   if (!t) {
     t = document.createElement("div");
     t.id = "toast";
-    t.style.cssText = "position:fixed;bottom:20px;right:20px;background:var(--card);border:1px solid var(--border);border-left:4px solid #16a34a;padding:12px 16px;border-radius:8px;font-size:13px;box-shadow:0 4px 20px rgba(0,0,0,0.15);max-width:420px;z-index:1000;";
+    t.style.cssText = "position:fixed;bottom:20px;right:20px;background:var(--card);border:1px solid var(--border);border-left:4px solid #16a34a;padding:12px 16px;border-radius:8px;font-size:13px;box-shadow:var(--shadow);max-width:420px;z-index:1000;color:var(--text);";
     document.body.appendChild(t);
   }
-  t.innerHTML = `<div style="font-weight:600;margin-bottom:4px;">${escapeHtml(msg)}</div>` +
-                (detail ? `<div style="font-size:11px;color:var(--muted);font-family:ui-monospace,Consolas,monospace;word-break:break-all;">${escapeHtml(detail)}</div>` : "");
+  t.textContent = msg;
   t.style.display = "block";
   clearTimeout(window._toastTimer);
-  window._toastTimer = setTimeout(() => { t.style.display = "none"; }, 6000);
+  window._toastTimer = setTimeout(() => { t.style.display = "none"; }, 5000);
 }
 
 btn.addEventListener("click", go);
 q.addEventListener("keydown", e => { if (e.key === "Enter") go(); });
+lim.addEventListener("keydown", e => { if (e.key === "Enter") go(); });
+topNInput.addEventListener("keydown", e => { if (e.key === "Enter") go(); });
 rankBy.addEventListener("change", () => { if (mergedPool.length) renderMerged(); });
-topNInput.addEventListener("input", () => { if (mergedPool.length) renderMerged(); });
+topNInput.addEventListener("change", () => {
+  topN = parseInt(topNInput.value, 10) || 100;
+  topNSpan.textContent = topN;
+  if (mergedPool.length) renderMerged();
+});
 exportBtn.addEventListener("click", exportToExcel);
 </script>
 </body>

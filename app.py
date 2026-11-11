@@ -186,7 +186,8 @@ if __name__ == "__main__":
     else:
         try:
             from waitress import serve
-            print(f"[paper-agent] serving on http://{host}:{port}")
+            shown = "localhost" if host in ("0.0.0.0", "::") else host
+            print(f"[paper-agent] serving on http://{shown}:{port}  (bound to {host})")
             serve(app, host=host, port=port, threads=8)
         except ImportError:
             # Fallback: Flask's dev server with debug off (not ideal but works)
